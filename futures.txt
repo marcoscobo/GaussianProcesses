@@ -1,12 +1,10 @@
 symbol;Name
-GC=F;Oro
-BZ=F;Petróleo Brent
-CL=F;Petróleo WTI
+GC=F;Gold
+CL=F;Petroleum WTI
 NG=F;Natural Gas
-SI=F;Plata
+SI=F;Silver
 RB=F;RBOB Gasoline
 HO=F;Heating Oil
-B0=F;Mont Belvieu LDH Propane
 PL=F;Platinum
 HG=F;Copper
 PA=F;Palladium
