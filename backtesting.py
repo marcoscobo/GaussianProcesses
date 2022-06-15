@@ -6,11 +6,10 @@ from sklearn.linear_model import LinearRegression
 
 class BackTesting:
 
-    def __init__(self, df_market, trade_col, action_col, spread):
+    def __init__(self, df_market, trade_col, action_col):
         self.df_market = df_market
         self.action_col = action_col
         self.trade_col = trade_col
-        self.spread = spread
 
         self.buys_limits = None
         self.sells_limits = None
@@ -22,7 +21,13 @@ class BackTesting:
         self.end = None
         self.duration = None
         self.exposure_time = None
+        self.buy_ops = None
+        self.sell_ops = None
+        self.total_ops = None
+        self.win_buy = None
+        self.win_sell = None
         self.profit = None
+        self.profit_factor = None
         self.max_drawdown = None
         self.average_drawdown = None
         self.recovery_factor = None
@@ -61,15 +66,20 @@ class BackTesting:
         self.exposure_time = np.sum(np.abs(self.df_market[self.action_col])) / len(self.df_market) * 100
         self.profit = self.df_market['Cumulative_Profit_Growth'].iloc[-1]
 
-        self.calculate_drawdown()
         self.calculate_counts()
+        self.buy_ops = self.count_buys_wins + self.count_buys_loses
+        self.sell_ops = self.count_sells_wins + self.count_sells_loses
+        self.total_ops = self.buy_ops + self.sell_ops
+        self.win_buy = self.count_buys_wins / self.buy_ops
+        self.win_sell = self.count_sells_wins / self.sell_ops
+
         self.calculate_profit_factor()
+        self.profit_factor = self.df_market['Profit_Factor'].iloc[-1]
+
+        self.calculate_drawdown()
         self.calculate_r2()
 
         if verbose:
-            buy_ops = self.count_buys_wins + self.count_buys_loses
-            sell_ops = self.count_sells_wins + self.count_sells_loses
-
             with open('Backtesting/Results/{}.txt'.format(save), 'w') as external_file:
                 print('-' * 15, 'BACKTESTING', '-' * 15)
                 print('-' * 15, 'BACKTESTING', '-' * 15, file=external_file)
@@ -79,23 +89,23 @@ class BackTesting:
                                 ['Duration', '{} days'.format(self.duration)],
                                 ['Exposure time [%]', '{:.2f}'.format(self.exposure_time)],
 
-                                ['Total ops.', buy_ops + sell_ops],
-                                ['Buy ops.', buy_ops],
-                                ['Win rate Buy ops. [%]', '{:.2f}'.format(100 * self.count_buys_wins / buy_ops)],
-                                ['Sell ops.', sell_ops],
-                                ['Win rate Sell ops. [%]', '{:.2f}'.format(100 * self.count_sells_wins / sell_ops)],
-                                ['Profit factor', '{:.2f}'.format(self.df_market['Profit_Factor'].iloc[-1])],
+                                ['Total ops.', self.total_ops],
+                                ['Buy ops.', self.buy_ops],
+                                ['Win rate Buy ops. [%]', '{:.2f}'.format(100 * self.win_buy)],
+                                ['Sell ops.', self.sell_ops],
+                                ['Win rate Sell ops. [%]', '{:.2f}'.format(100 * self.win_sell)],
+                                ['Profit factor', '{:.2f}'.format(self.profit_factor)],
 
                                 ['Max. drawdown [%]', '{:.2f}'.format(self.max_drawdown * 100)],
                                 ['Avg. drawdown [%]', '{:.2f}'.format(self.average_drawdown * 100)],
                                 ['Recovery factor', '{:.2f}'.format(self.recovery_factor)],
                                 ['Determination coef. R2', '{:.2f}'.format(self.r2)]],
-                                tablefmt='plain', colalign=('left', 'right'), floatfmt=".4f")
+                               tablefmt='plain', colalign=('left', 'right'), floatfmt=".4f")
                 print(tab)
                 print(tab, file=external_file)
 
                 print('-' * 43)
-                print('-' * 43,  file=external_file)
+                print('-' * 43, file=external_file)
                 external_file.close()
 
     def execute(self, metrics=False, verbose=False, plot=False, title='', save=None):
