@@ -21,11 +21,13 @@ def get_df_symbols(symbols, verbose=False):
     return datasets
 
 
-def get_corr(datasets, n=3, year=None, method='pearson', alpha=0.05, plot=False, save=None):
+def get_corr(datasets, n=3, year=None, method='pearson', alpha=0.05, notrend=False, plot=False, save=None):
     df_closes = pd.DataFrame(columns=list(datasets.keys()))
     for name in list(datasets.keys()):
         df_closes[name] = datasets[name]['Adj Close']
         df_closes[name] = (df_closes[name] - df_closes[name][0]) / df_closes[name].std()
+        if notrend:
+            df_closes[name] = df_closes[name] - df_closes[name].rolling(5, center=True).mean().fillna(0)
     if year is not None:
         df_closes = df_closes[:str(year)]
 
@@ -36,7 +38,7 @@ def get_corr(datasets, n=3, year=None, method='pearson', alpha=0.05, plot=False,
                 corr = pearsonr(df_closes[name1].fillna(0), df_closes[name2].fillna(0))
             elif method == 'spearman':
                 corr = spearmanr(df_closes[name1].fillna(0), df_closes[name2].fillna(0))
-            df_corr.at[name1, name2] = 0 if corr[1] > alpha else float(corr[0])
+            df_corr.at[name1, name2] = 0 if corr[1] >= alpha else float(corr[0])
     df_corr = df_corr.astype('float64')
 
     if plot:
