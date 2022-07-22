@@ -4,6 +4,9 @@ from pandas_datareader import data as wb
 from datetime import datetime as dt
 from sklearn.linear_model import LinearRegression
 from tabulate import tabulate
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.stats import pearsonr, spearmanr
 
 
 def get_df_symbols(symbols, verbose=False):
@@ -12,10 +15,41 @@ def get_df_symbols(symbols, verbose=False):
 
         if verbose:
             print('Getting ' + name + ' dataset')
-        df = wb.DataReader(symbol, data_source='yahoo', start='2000-1-1')
+        df = wb.DataReader(symbol, data_source='yahoo', start='2001-1-1')
         datasets[name] = df
 
     return datasets
+
+
+def get_corr(datasets, n=3, year=None, method='pearson', alpha=0.05, plot=False, save=None):
+    df_closes = pd.DataFrame(columns=list(datasets.keys()))
+    for name in list(datasets.keys()):
+        df_closes[name] = datasets[name]['Adj Close']
+        df_closes[name] = (df_closes[name] - df_closes[name][0]) / df_closes[name].std()
+    if year is not None:
+        df_closes = df_closes[:str(year)]
+
+    df_corr = pd.DataFrame(columns=list(datasets.keys()), index=list(datasets.keys()))
+    for name1 in df_corr.columns:
+        for name2 in df_corr.index:
+            if method == 'pearson':
+                corr = pearsonr(df_closes[name1].fillna(0), df_closes[name2].fillna(0))
+            elif method == 'spearman':
+                corr = spearmanr(df_closes[name1].fillna(0), df_closes[name2].fillna(0))
+            df_corr.at[name1, name2] = 0 if corr[1] > alpha else float(corr[0])
+    df_corr = df_corr.astype('float64')
+
+    if plot:
+        f, ax = plt.subplots(figsize=(15, 10))
+        ax = sns.heatmap(df_corr, xticklabels=df_corr.columns, yticklabels=df_corr.columns, annot=True, ax=ax)
+        if save is not None:
+            plt.savefig(save + '.png')
+
+    top_n_corr = {}
+    for name in df_corr.columns:
+        top_n_corr[name] = list(df_corr[name][df_corr[name] < 1].abs().nlargest(n).index)
+
+    return top_n_corr
 
 
 def total_backtesting(backtests, symbols, verbose=False, plot=False, save=None):
@@ -42,7 +76,7 @@ def total_backtesting(backtests, symbols, verbose=False, plot=False, save=None):
         exposure_time += weight * backtests[name].exposure_time
         profit_factor += weight * backtests[name].profit_factor
 
-    total_backtest.rename(columns={'price':'Cumulative_Growth', 'growth':'Cumulative_Profit_Growth'}, inplace=True)
+    total_backtest.rename(columns={'price': 'Cumulative_Growth', 'growth': 'Cumulative_Profit_Growth'}, inplace=True)
     total_backtest['Drawdown'] = total_backtest['Cumulative_Profit_Growth'] - total_backtest[
         'Cumulative_Profit_Growth'].cummax()
 
@@ -50,9 +84,10 @@ def total_backtesting(backtests, symbols, verbose=False, plot=False, save=None):
     end = str(total_backtest['Date'].iloc[-1])
     duration = (dt.strptime(end, '%Y-%m-%d %H:%M:%S') - dt.strptime(start, '%Y-%m-%d %H:%M:%S')).days
 
-    win_buy = count_buys_wins / buy_ops
-    win_sell = count_sells_wins / sell_ops
+    win_buy = count_buys_wins / (buy_ops + 1e-4)
+    win_sell = count_sells_wins / (sell_ops + 1e-4)
     profit = total_backtest['Cumulative_Profit_Growth'].iloc[-1]
+    annual_yield = (profit ** (365 / duration))
 
     max_drawdown = - total_backtest['Drawdown'].min()
     average_drawdown = - total_backtest['Drawdown'].mean()
@@ -73,7 +108,8 @@ def total_backtesting(backtests, symbols, verbose=False, plot=False, save=None):
                'Win rate Buy ops. [%]': '{:.2f}'.format(100 * win_buy),
                'Sell ops.': sell_ops,
                'Win rate Sell ops. [%]': '{:.2f}'.format(100 * win_sell),
-               'Profit': profit,
+               'Profit [%]' : '{:.2f}'.format(100 * (profit - 1)),
+               'Annual yield [%]' : '{:.2f}'.format(100 * (annual_yield - 1)),
                'Profit factor': '{:.2f}'.format(profit_factor),
                'Max. drawdown [%]': '{:.2f}'.format(max_drawdown * 100),
                'Avg. drawdown [%]': '{:.2f}'.format(average_drawdown * 100),
@@ -96,6 +132,7 @@ def total_backtesting(backtests, symbols, verbose=False, plot=False, save=None):
                             ['Sell ops.', sell_ops],
                             ['Win rate Sell ops. [%]', '{:.2f}'.format(100 * win_sell)],
                             ['Profit [%]', '{:.2f}'.format(100 * (profit - 1))],
+                            ['Annual yield [%]', '{:.2f}'.format(100 * (annual_yield - 1))],
                             ['Profit factor', '{:.2f}'.format(profit_factor)],
 
                             ['Max. drawdown [%]', '{:.2f}'.format(max_drawdown * 100)],

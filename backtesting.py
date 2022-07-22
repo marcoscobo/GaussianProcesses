@@ -11,6 +11,8 @@ class BackTesting:
         self.action_col = action_col
         self.trade_col = trade_col
 
+        self.buys = None
+        self.sells = None
         self.buys_limits = None
         self.sells_limits = None
         self.count_buys_wins = None
@@ -43,21 +45,21 @@ class BackTesting:
         self.df_market['Cumulative_Profit_Growth'] = np.cumprod(1 + self.df_market['Profit_Growth'])
 
     def get_buy_sell_limits(self):
-        buys = self.df_market[self.action_col][self.df_market[self.action_col] == 1].index
-        if len(buys) > 0:
-            self.buys_limits = [buys[0]]
-            for i in range(len(buys) - 1):
-                if (buys[i] - buys[i - 1] > 1) | (buys[i + 1] - buys[i] > 1):
-                    self.buys_limits.append(buys[i])
-            self.buys_limits.append(buys[-1])
+        self.buys = self.df_market[self.action_col][self.df_market[self.action_col] == 1].index
+        if len(self.buys) > 0:
+            self.buys_limits = [self.buys[0]]
+            for i in range(len(self.buys) - 1):
+                if (self.buys[i] - self.buys[i - 1] > 1) | (self.buys[i + 1] - self.buys[i] > 1):
+                    self.buys_limits.append(self.buys[i])
+            self.buys_limits.append(self.buys[-1])
 
-        sells = self.df_market[self.action_col][self.df_market[self.action_col] == -1].index
-        if len(sells) > 0:
-            self.sells_limits = [sells[0]]
-            for i in range(len(sells) - 1):
-                if (sells[i] - sells[i - 1] > 1) | (sells[i + 1] - sells[i] > 1):
-                    self.sells_limits.append(sells[i])
-            self.sells_limits.append(sells[-1])
+        self.sells = self.df_market[self.action_col][self.df_market[self.action_col] == -1].index
+        if len(self.sells) > 0:
+            self.sells_limits = [self.sells[0]]
+            for i in range(len(self.sells) - 1):
+                if (self.sells[i] - self.sells[i - 1] > 1) | (self.sells[i + 1] - self.sells[i] > 1):
+                    self.sells_limits.append(self.sells[i])
+            self.sells_limits.append(self.sells[-1])
 
     def calculate_metrics(self, verbose, save):
         self.start = str(self.df_market['Date'][0])
@@ -70,8 +72,8 @@ class BackTesting:
         self.buy_ops = self.count_buys_wins + self.count_buys_loses
         self.sell_ops = self.count_sells_wins + self.count_sells_loses
         self.total_ops = self.buy_ops + self.sell_ops
-        self.win_buy = self.count_buys_wins / self.buy_ops
-        self.win_sell = self.count_sells_wins / self.sell_ops
+        self.win_buy = self.count_buys_wins / (self.buy_ops + 1e-4)
+        self.win_sell = self.count_sells_wins / (self.sell_ops + 1e-4)
 
         self.calculate_profit_factor()
         self.profit_factor = self.df_market['Profit_Factor'].iloc[-1]
@@ -121,7 +123,7 @@ class BackTesting:
 
     def calculate_counts(self):
         self.count_buys_wins, self.count_buys_loses = 0, 0
-        if len(self.buys_limits) > 0:
+        if len(self.buys) > 0:
             for i in range(len(self.buys_limits) // 2):
                 ini = self.df_market[self.trade_col][self.buys_limits[2 * i]]
                 fin = self.df_market[self.trade_col][self.buys_limits[2 * i + 1]]
@@ -130,7 +132,7 @@ class BackTesting:
                 else:
                     self.count_buys_loses += 1
         self.count_sells_wins, self.count_sells_loses = 0, 0
-        if len(self.sells_limits) > 0:
+        if len(self.sells) > 0:
             for i in range(len(self.sells_limits) // 2):
                 ini = self.df_market[self.trade_col][self.sells_limits[2 * i]]
                 fin = self.df_market[self.trade_col][self.sells_limits[2 * i + 1]]
@@ -174,12 +176,12 @@ class BackTesting:
         pbt = self.df_market[['Date', 'Cumulative_Growth', 'Cumulative_Profit_Growth', 'Drawdown']].plot(x='Date', y=[
             'Cumulative_Growth', 'Cumulative_Profit_Growth', 'Drawdown'], title=title, figsize=(16, 8))
 
-        if len(self.buys_limits) > 0:
+        if len(self.buys) > 0:
             for i in range(len(self.buys_limits) // 2):
                 p = pbt.axvspan(self.df_market['Date'][self.buys_limits[2 * i]],
                                 self.df_market['Date'][self.buys_limits[2 * i + 1]], alpha=0.15, color='green')
 
-        if len(self.sells_limits) > 0:
+        if len(self.sells) > 0:
             for i in range(len(self.sells_limits) // 2):
                 p = pbt.axvspan(self.df_market['Date'][self.sells_limits[2 * i]],
                                 self.df_market['Date'][self.sells_limits[2 * i + 1]], alpha=0.15, color='red')
