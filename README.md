@@ -2,9 +2,9 @@
 En este trabajo se ha desarrollado una estrategia para operar en tiempo real en el mercado de materias primas. Se estudian condiciones y tendencias pasadas conjuntas del mercado para tomar decisiones previamente programadas, fundamentadas en los Procesos Gaussianos.
 
 Mediante un kernel diseñado específicamente para el problema de predicción que planteamos, al final del primer trimestre del año obtenemos la predicción de cada materia prima en el mercado y calculamos el momento óptimo de entrada y salida en base a una función de coste diseñada que tiene en cuenta el potencial rendimiento de la operación conjuntamente con su potencial riesgo.
-<img height="400" src="/home/marcoscobo/Escritorio/GitHub/GPs_finance/Actions/Figures/Coffee2016_60_6_curve.png" width="1000"/>
+<img height="400" src="/home/marcoscobo/Escritorio/GitHub/GPs_finance/Figures/Coffee2016_60_6_curve.png" width="1000"/>
 Finalmente se estudian los resultados que se hubiesen obtenido al operar conjuntamente en el mercado de materias primas desde el año 2011 hasta el 2021 (ambos incluidos) con dicha estrategia.
-<img height="400" src="/home/marcoscobo/Escritorio/GitHub/GPs_finance/Backtesting/Figures/Total_Backtesting.png" width="1000"/>
+<img height="400" src="/home/marcoscobo/Escritorio/GitHub/GPs_finance/Figures/Total_Backtesting.png" width="1000"/>
 
 ## Autores:
 
