@@ -119,7 +119,7 @@ def total_backtesting(backtests, symbols, verbose=False, plot=False, save=None):
                'Determination coef. R2': '{:.2f}'.format(r2)}
 
     if verbose:
-        with open('Backtesting/Results/Total_Backtesting.txt', 'w') as external_file:
+        with open(save + '/Results/Total_Backtesting.txt', 'w') as external_file:
             print('-' * 15, 'BACKTESTING', '-' * 15)
             print('-' * 15, 'BACKTESTING', '-' * 15, file=external_file)
 
@@ -154,6 +154,6 @@ def total_backtesting(backtests, symbols, verbose=False, plot=False, save=None):
                                   title='Total Backtesting', figsize=(16, 8))
         if save is not None:
             f = pbt.get_figure()
-            f.savefig('Backtesting/Figures/' + save + '.png')
+            f.savefig(save + '/Figures/Total_Backtesting.png')
 
     return total_backtest, metrics

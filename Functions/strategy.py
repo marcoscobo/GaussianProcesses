@@ -12,7 +12,7 @@ class Strategy:
 
     def __init__(self, df, df_s1, df_s2, df_s3, kernel, year_pred, years_before, days_before, days_between_rows=7,
                  days_between_deltas=31, scale_X=False, column='Adj Close', lower_bound=1e-4, upper_bound=1e+4,
-                 max_iter=50, min_IR=1, min_days=10, verbose=False, verbose_kernel=False, plot_strategy=False,
+                 max_iter=50, time_pen=1.001, min_IR=1, min_days=10, verbose=False, verbose_kernel=False, plot_strategy=False,
                  plot_prediction=False, save=None):
 
         self.df = df
@@ -30,6 +30,7 @@ class Strategy:
         self.lower_bound = lower_bound
         self.upper_bound = upper_bound
         self.max_iter = max_iter
+        self.time_pen = time_pen
         self.min_IR = min_IR
         self.min_days = min_days
         self.verbose = verbose
@@ -162,12 +163,12 @@ class Strategy:
         def cost_fun_buy(i, j):
             x0, x1 = self.y_pred[i], self.y_pred[j]
             var0, var1, cov01 = self.y_cov[i, i], self.y_cov[j, j], self.y_cov[i, j]
-            return ((1 + x1) / (1 + x0)) / (np.sqrt(var0 + var1 - 2 * cov01))
+            return ((1 + x1) / (1 + x0)) / (np.sqrt(var0 + var1 - 2 * cov01)) * self.time_pen ** (i - j)
 
         def cost_fun_sell(i, j):
             x0, x1 = self.y_pred[i], self.y_pred[j]
             var0, var1, cov01 = self.y_cov[i, i], self.y_cov[j, j], self.y_cov[i, j]
-            return ((1 + x0) / (1 + x1)) / (np.sqrt(var0 + var1 - 2 * cov01))
+            return ((1 + x0) / (1 + x1)) / (np.sqrt(var0 + var1 - 2 * cov01)) * self.time_pen ** (i - j)
 
         X_grid, Y_grid = np.meshgrid(range(len(self.y_pred)), range(len(self.y_pred)))
         self.Z_grid_buy = pd.DataFrame(cost_fun_buy(X_grid, Y_grid))
