@@ -1,18 +1,18 @@
 symbol;Name;Weight
-GC=F;Gold;0.0625
-CL=F;Petroleum WTI;0.0625
-NG=F;Natural Gas;0.0625
-SI=F;Silver;0.0625
-RB=F;RBOB Gasoline;0.0625
-HO=F;Heating Oil;0.0625
-PL=F;Platinum;0.0625
-HG=F;Copper;0.0625
-PA=F;Palladium;0.0625
-ZC=F;Corn Futures;0.0625
-ZR=F;Rough Rice Futures;0.0625
-ZS=F;Soybean Futures;0.0625
-CC=F;Cocoa;0.0625
-KC=F;Coffee;0.0625
-CT=F;Cotton;0.0625
-SB=F;Sugar;0.0625
+GC=F;Gold;0.054054
+CL=F;Petroleum WTI;0.054054
+NG=F;Natural Gas;0.027027
+SI=F;Silver;0.108108
+RB=F;RBOB Gasoline;0.081081
+HO=F;Heating Oil;0.027027
+PL=F;Platinum;0.108108
+HG=F;Copper;0.108108
+PA=F;Palladium;0.027027
+ZC=F;Corn Futures;0.054054
+ZR=F;Rough Rice Futures;0.027027
+ZS=F;Soybean Futures;0.081081
+CC=F;Cocoa;0.054054
+KC=F;Coffee;0.027027
+CT=F;Cotton;0.108108
+SB=F;Sugar;0.054054
 

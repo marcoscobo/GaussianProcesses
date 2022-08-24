@@ -11,8 +11,9 @@ warnings.filterwarnings("ignore")
 class Strategy:
 
     def __init__(self, df, df_s1, df_s2, df_s3, kernel, year_pred, years_before, days_before, days_between_rows=7,
-                 days_between_deltas=31, scale_X=False, column='Adj Close', lower_bound=1e-4, upper_bound=1e+4,
-                 max_iter=50, time_pen=1.001, min_IR=1, min_days=10, verbose=False, verbose_kernel=False, plot_strategy=False,
+                 days_between_deltas=31, num_inducing=None, scale_X=False, column='Adj Close', max_iter=50,
+                 opt_restarts=1, time_pen=1.001, min_IR=1, min_days=10, ratquadls=None, ratquadls_lower_constrain=None,
+                 ratquadls_upper_constrain=None, verbose=False, verbose_kernel=False, plot_strategy=False,
                  plot_prediction=False, save=None):
 
         self.df = df
@@ -25,14 +26,17 @@ class Strategy:
         self.days_before = days_before
         self.days_between_rows = days_between_rows
         self.days_between_deltas = days_between_deltas
+        self.num_inducing = num_inducing
         self.scale_X = scale_X
         self.column = column
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
         self.max_iter = max_iter
+        self.opt_restarts = opt_restarts
         self.time_pen = time_pen
         self.min_IR = min_IR
         self.min_days = min_days
+        self.ratquadls = ratquadls
+        self.ratquadls_lower_constrain = ratquadls_lower_constrain
+        self.ratquadls_upper_constrain = ratquadls_upper_constrain
         self.verbose = verbose
         self.verbose_kernel = verbose_kernel
         self.plot_strategy = plot_strategy
@@ -89,32 +93,29 @@ class Strategy:
         self.df_years_s2 = self.get_df_years(self.df_s2)
         self.df_years_s3 = self.get_df_years(self.df_s3)
 
-        years = [int(year) for year in self.df_years.columns.values]
+        years = [int(year) for year in range(self.year_pred - self.years_before, self.year_pred + 1)]
         days = np.arange(0, len(self.df_years), self.days_between_rows)
         deltas = np.arange(0, len(self.df_years), self.days_between_deltas)
 
-        self.X, self.y, i = pd.DataFrame(columns=['year', 'day', 'delta', 's1', 's2', 's3']), [], 0
-        for year in years:
-            for day in days:
-                for delta in deltas:
-                    if (day + delta) < len(self.df_years):
-                        self.X.loc[i, 'year'], self.X.loc[i, 'day'], self.X.loc[i, 'delta'] = year, day, delta
-                        self.X.loc[i, 's1'] = self.df_years_s1[str(year)].values[day]
-                        self.X.loc[i, 's2'] = self.df_years_s2[str(year)].values[day]
-                        self.X.loc[i, 's3'] = self.df_years_s3[str(year)].values[day]
-                        self.y.append(self.df_years[str(year)].values[day + delta])
-                        i += 1
-        self.y = np.array(self.y)
+        lp1, lp2, lp3 = pd.core.reshape.util.cartesian_product([years, days, deltas])
+        self.X = pd.DataFrame({'year': lp1, 'day': lp2, 'delta': lp3})
+        self.X = self.X.loc[(self.X['day'] + self.X['delta']) < len(self.df_years)]
+
+        s1 = self.X.apply(lambda x: self.df_years_s1[str(int(x['year']))].values[x['day']], axis=1)
+        s2 = self.X.apply(lambda x: self.df_years_s2[str(int(x['year']))].values[x['day']], axis=1)
+        s3 = self.X.apply(lambda x: self.df_years_s3[str(int(x['year']))].values[x['day']], axis=1)
+        self.y = np.array(self.X.apply(lambda x: self.df_years[str(int(x['year']))].values[x['day'] + x['delta']], axis=1))
+
+        self.X['s1'], self.X['s2'], self.X['s3'] = s1, s2, s3
 
         self.X = self.X.loc[~(self.y == -1e+6), :].reset_index(drop=True)
         self.y = self.y[~(self.y == -1e+6)]
 
     def get_train_pred(self):
 
-        mask_train = ((self.X['year'] >= self.year_pred - self.years_before) & (
-                self.X['year'] < self.year_pred)) | (
-                             (self.X['year'] == self.year_pred) & (self.X['day'] < self.days_before))
-        mask_test = (self.X['year'] == self.year_pred) & (self.X['day'] >= self.days_before)
+        mask_train = ((self.X['year'] >= self.year_pred - self.years_before) & (self.X['year'] < self.year_pred)) | \
+                     ((self.X['year'] == self.year_pred) & (self.X['day'] < self.days_before) &
+                      (self.X['day'] + self.X['delta'] < self.days_before))
         len_year = len(self.df.loc[str(self.year_pred)])
 
         if self.scale_X:
@@ -138,16 +139,35 @@ class Strategy:
         y_year = self.df_years[str(self.year_pred)]
         self.y_test = y_year[y_year != -1e+6][self.days_before:].reset_index(drop=True)
 
+        if self.num_inducing is not None:
+
+            # TODO: BORRAR
+            np.random.seed(0)
+            # TODO: BORRAR
+
+            inducing_mask = np.random.randint(len(self.X_train), size=self.num_inducing)
+            self.X_train = self.X_train.iloc[inducing_mask]
+            self.y_train = self.y_train[inducing_mask]
+
     def get_prediction(self):
 
         if self.verbose:
             print('Predicting year {} with data from {} to {}'.format(self.year_pred,
                                                                       self.year_pred - self.years_before,
                                                                       self.year_pred - 1))
+        self.gp = GPy.models.GPRegression(np.array(self.X_train), np.array(self.y_train)[:, None], kernel=self.kernel)
 
-        self.gp = GPy.models.GPRegression(np.array(self.X_train), np.array(self.y_train)[:, None], self.kernel)
-        # self.gp['.*lengthscale'].constrain_bounded(self.lower_bound, self.upper_bound)
-        self.gp.optimize(messages=self.verbose_kernel, ipython_notebook=False, max_iters=self.max_iter)
+        if self.ratquadls_lower_constrain is not None and self.ratquadls_upper_constrain is not None:
+            self.gp.sum.mul.RatQuad.lengthscale.constrain_bounded(self.ratquadls_lower_constrain,
+                                                                  self.ratquadls_upper_constrain)
+        if self.ratquadls is not None:
+            self.gp.sum.mul.RatQuad.lengthscale.constrain_fixed(self.ratquadls)
+
+        if self.opt_restarts <= 1:
+            self.gp.optimize(optimizer='bfgs', messages=self.verbose_kernel, ipython_notebook=False,
+                             max_iters=self.max_iter)
+        else:
+            self.gp.optimize_restarts(num_restarts=self.opt_restarts)
 
         self.y_pred, self.y_cov = self.gp.predict(np.array(self.X_pred), full_cov=True)
         self.y_pred = self.y_pred.reshape(self.y_pred.shape[0])
@@ -172,11 +192,13 @@ class Strategy:
 
         X_grid, Y_grid = np.meshgrid(range(len(self.y_pred)), range(len(self.y_pred)))
         self.Z_grid_buy = pd.DataFrame(cost_fun_buy(X_grid, Y_grid))
-        self.Z_grid_buy = (self.Z_grid_buy * np.tri(*self.Z_grid_buy.shape, k=-self.min_days)).fillna(1).replace(0, np.NAN)
+        self.Z_grid_buy = (self.Z_grid_buy * np.tri(*self.Z_grid_buy.shape, k=-self.min_days)).fillna(1).replace(0,
+                                                                                                                 np.NAN)
         max_buy = self.Z_grid_buy.max().max()
 
         self.Z_grid_sell = pd.DataFrame(cost_fun_sell(X_grid, Y_grid))
-        self.Z_grid_sell = (self.Z_grid_sell * np.tri(*self.Z_grid_sell.shape, k=-self.min_days)).fillna(1).replace(0, np.NAN)
+        self.Z_grid_sell = (self.Z_grid_sell * np.tri(*self.Z_grid_sell.shape, k=-self.min_days)).fillna(1).replace(0,
+                                                                                                                    np.NAN)
         max_sell = self.Z_grid_sell.max().max()
 
         if max_buy >= max_sell:
@@ -212,9 +234,11 @@ class Strategy:
         if self.plot_prediction:
             df_y = pd.DataFrame({'y_pred': 1 + self.y_pred, 'y_std': self.y_std})
             predp = df_y.plot(y=['y_pred'], legend=False, figsize=(16, 8))
-            p = predp.fill_between(range(len(df_y['y_pred'])), df_y['y_pred'] - df_y['y_std'], df_y['y_pred'] + df_y['y_std'],
+            p = predp.fill_between(range(len(df_y['y_pred'])), df_y['y_pred'] - df_y['y_std'],
+                                   df_y['y_pred'] + df_y['y_std'],
                                    alpha=0.25, color='k')
             p = predp.plot(1 + self.y_test, linestyle='--')
+
             if max(max_buy, max_sell) > self.min_IR and self.op == 1:
                 p = predp.axvspan(self.buy, self.sell, alpha=0.15, color='green')
             elif max(max_buy, max_sell) > self.min_IR and self.op == -1:
