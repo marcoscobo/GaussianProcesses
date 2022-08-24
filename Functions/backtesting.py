@@ -86,36 +86,36 @@ class BackTesting:
         self.calculate_drawdown()
         self.calculate_r2()
 
-        if verbose:
-            with open('Backtesting/Results/{}.txt'.format(save), 'w') as external_file:
+        with open('Backtesting/Results/{}.txt'.format(save), 'w') as external_file:
+            if verbose:
                 print('-' * 15, 'BACKTESTING', '-' * 15)
-                print('-' * 15, 'BACKTESTING', '-' * 15, file=external_file)
+            print('-' * 15, 'BACKTESTING', '-' * 15, file=external_file)
 
-                tab = tabulate([['Start', self.start],
-                                ['End', self.end],
-                                ['Duration', '{} days'.format(self.duration)],
-                                ['Exposure time [%]', '{:.2f}'.format(self.exposure_time)],
+            tab = tabulate([['Start', self.start],
+                            ['End', self.end],
+                            ['Duration', '{} days'.format(self.duration)],
+                            ['Exposure time [%]', '{:.2f}'.format(self.exposure_time)],
 
-                                ['Total ops.', self.total_ops],
-                                ['Buy ops.', self.buy_ops],
-                                ['Win rate Buy ops. [%]', '{:.2f}'.format(100 * self.win_buy)],
-                                ['Sell ops.', self.sell_ops],
-                                ['Win rate Sell ops. [%]', '{:.2f}'.format(100 * self.win_sell)],
-                                ['Profit [%]', '{:.2f}'.format(100 * (self.profit - 1))],
-                                ['Annual yield [%]', '{:.2f}'.format(100 * (self.annual_yield - 1))],
-                                ['Profit factor', '{:.2f}'.format(self.profit_factor)],
+                            ['Total ops.', self.total_ops],
+                            ['Buy ops.', self.buy_ops],
+                            ['Win rate Buy ops. [%]', '{:.2f}'.format(100 * self.win_buy)],
+                            ['Sell ops.', self.sell_ops],
+                            ['Win rate Sell ops. [%]', '{:.2f}'.format(100 * self.win_sell)],
+                            ['Profit [%]', '{:.2f}'.format(100 * (self.profit - 1))],
+                            ['Annual yield [%]', '{:.2f}'.format(100 * (self.annual_yield - 1))],
+                            ['Profit factor', '{:.2f}'.format(self.profit_factor)],
 
-                                ['Max. drawdown [%]', '{:.2f}'.format(self.max_drawdown * 100)],
-                                ['Avg. drawdown [%]', '{:.2f}'.format(self.average_drawdown * 100)],
-                                ['Recovery factor', '{:.2f}'.format(self.recovery_factor)],
-                                ['Determination coef. R2', '{:.2f}'.format(self.r2)]],
-                               tablefmt='plain', colalign=('left', 'right'), floatfmt=".4f")
+                            ['Max. drawdown [%]', '{:.2f}'.format(self.max_drawdown * 100)],
+                            ['Avg. drawdown [%]', '{:.2f}'.format(self.average_drawdown * 100)],
+                            ['Recovery factor', '{:.2f}'.format(self.recovery_factor)],
+                            ['Determination coef. R2', '{:.2f}'.format(self.r2)]],
+                           tablefmt='plain', colalign=('left', 'right'), floatfmt=".4f")
+            if verbose:
                 print(tab)
-                print(tab, file=external_file)
-
                 print('-' * 43)
-                print('-' * 43, file=external_file)
-                external_file.close()
+            print(tab, file=external_file)
+            print('-' * 43, file=external_file)
+            external_file.close()
 
     def execute(self, metrics=False, verbose=False, plot=False, title='', save=None):
         self.df_market[self.action_col] = self.df_market[self.action_col] * self.direction
@@ -271,36 +271,36 @@ def total_backtesting(backtests, symbols, verbose=False, plot=False, save=None):
                'Recovery factor': '{:.2f}'.format(recovery_factor),
                'Determination coef. R2': '{:.2f}'.format(r2)}
 
-    if verbose:
-        with open(save + '/Results/Total_Backtesting.txt', 'w') as external_file:
+    with open(save + '/Results/Total_Backtesting.txt', 'w') as external_file:
+        if verbose:
             print('-' * 15, 'BACKTESTING', '-' * 15)
-            print('-' * 15, 'BACKTESTING', '-' * 15, file=external_file)
+        print('-' * 15, 'BACKTESTING', '-' * 15, file=external_file)
 
-            tab = tabulate([['Start', start],
-                            ['End', end],
-                            ['Duration', '{} days'.format(duration)],
-                            ['Exposure time [%]', '{:.2f}'.format(exposure_time)],
+        tab = tabulate([['Start', start],
+                        ['End', end],
+                        ['Duration', '{} days'.format(duration)],
+                        ['Exposure time [%]', '{:.2f}'.format(exposure_time)],
 
-                            ['Total ops.', total_ops],
-                            ['Buy ops.', buy_ops],
-                            ['Win rate Buy ops. [%]', '{:.2f}'.format(100 * win_buy)],
-                            ['Sell ops.', sell_ops],
-                            ['Win rate Sell ops. [%]', '{:.2f}'.format(100 * win_sell)],
-                            ['Profit [%]', '{:.2f}'.format(100 * (profit - 1))],
-                            ['Annual yield [%]', '{:.2f}'.format(100 * (annual_yield - 1))],
-                            ['Profit factor', '{:.2f}'.format(profit_factor)],
+                        ['Total ops.', total_ops],
+                        ['Buy ops.', buy_ops],
+                        ['Win rate Buy ops. [%]', '{:.2f}'.format(100 * win_buy)],
+                        ['Sell ops.', sell_ops],
+                        ['Win rate Sell ops. [%]', '{:.2f}'.format(100 * win_sell)],
+                        ['Profit [%]', '{:.2f}'.format(100 * (profit - 1))],
+                        ['Annual yield [%]', '{:.2f}'.format(100 * (annual_yield - 1))],
+                        ['Profit factor', '{:.2f}'.format(profit_factor)],
 
-                            ['Max. drawdown [%]', '{:.2f}'.format(max_drawdown * 100)],
-                            ['Avg. drawdown [%]', '{:.2f}'.format(average_drawdown * 100)],
-                            ['Recovery factor', '{:.2f}'.format(recovery_factor)],
-                            ['Determination coef. R2', '{:.2f}'.format(r2)]],
-                           tablefmt='plain', colalign=('left', 'right'), floatfmt=".4f")
+                        ['Max. drawdown [%]', '{:.2f}'.format(max_drawdown * 100)],
+                        ['Avg. drawdown [%]', '{:.2f}'.format(average_drawdown * 100)],
+                        ['Recovery factor', '{:.2f}'.format(recovery_factor)],
+                        ['Determination coef. R2', '{:.2f}'.format(r2)]],
+                       tablefmt='plain', colalign=('left', 'right'), floatfmt=".4f")
+        if verbose:
             print(tab)
-            print(tab, file=external_file)
-
             print('-' * 43)
-            print('-' * 43, file=external_file)
-            external_file.close()
+        print(tab, file=external_file)
+        print('-' * 43, file=external_file)
+        external_file.close()
 
     if plot:
         pbt = total_backtest.plot(x='Date', y=['Cumulative_Growth', 'Cumulative_Profit_Growth', 'Drawdown'],

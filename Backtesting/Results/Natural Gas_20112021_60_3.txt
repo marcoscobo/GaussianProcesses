@@ -1,0 +1,18 @@
+--------------- BACKTESTING ---------------
+Start                   2011-01-03 00:00:00
+End                     2021-12-31 00:00:00
+Duration                          4015 days
+Exposure time [%]                     36.92
+Total ops.                               11
+Buy ops.                                  6
+Win rate Buy ops. [%]                 33.33
+Sell ops.                                 5
+Win rate Sell ops. [%]                40.00
+Profit [%]                           -44.08
+Annual yield [%]                      -5.15
+Profit factor                          1.00
+Max. drawdown [%]                    101.09
+Avg. drawdown [%]                     60.94
+Recovery factor                        0.28
+Determination coef. R2                 0.72
+-------------------------------------------
