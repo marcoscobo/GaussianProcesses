@@ -1,4 +1,4 @@
-# Procesos Gaussianos
+# Procesos Gausianos con aplicaciones en inversiones (Commodity market)
 En este trabajo se ha desarrollado una estrategia para operar en tiempo real en el mercado de materias primas. Se estudian condiciones y tendencias pasadas conjuntas del mercado para tomar decisiones previamente programadas, fundamentadas en los Procesos Gaussianos.
 
 Mediante un kernel diseñado específicamente para el problema de predicción que planteamos, al final del primer trimestre del año obtenemos la predicción de cada materia prima en el mercado y calculamos el momento óptimo de entrada y salida en base a una función de coste diseñada que tiene en cuenta el potencial rendimiento de la operación conjuntamente con su potencial riesgo.
